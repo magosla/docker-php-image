@@ -1,6 +1,5 @@
 ARG BASE_VERSION
 FROM magosla/php-swoole:${BASE_VERSION}
-#USER root
 
 RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS curl-dev \
     linux-headers && \
@@ -11,7 +10,3 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS curl-dev \
     apk del -f .build-deps   && \
     { find /usr/local/lib -type f -print0 | xargs -0r strip --strip-all -p 2>/dev/null || true; } \
     && rm -rf /tmp/* /usr/local/lib/php/doc/* /var/cache/* /var/www/html/* /usr/share/php8 /usr/share/php
-
-#USER www-data
-
-#RUN echo -e

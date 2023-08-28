@@ -5,10 +5,6 @@ FROM php:${PHP_VERSION}-fpm-alpine
 ARG LANG=en_US
 ARG CHARSET=UTF-8
 
-# Configure non-root user.
-# ENV PUID 1000
-# ENV PGID 1000
-
 ENV TZ=UTC
 
 WORKDIR /var/www/html
@@ -95,11 +91,3 @@ RUN echo -e '\
     opcache.max_accelerated_files=16000\n\
     opcache.save_comments=Off\n\
     ' >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
-
-# RUN groupmod -o -g ${PGID} www-data && \
-#     usermod -o -u ${PUID} -g www-data www-data
-
-#USER www-data
-
-#CMD ["php-fpm"]
-#CMD [ "/usr/bin/supervisord" ]
