@@ -6,8 +6,8 @@ ARG LANG=en_US
 ARG CHARSET=UTF-8
 
 # Configure non-root user.
-ENV PUID 1000
-ENV PGID 1000
+# ENV PUID 1000
+# ENV PGID 1000
 
 ENV TZ=UTC
 
@@ -87,8 +87,9 @@ RUN sed -i -e "s/upload_max_filesize = .*/upload_max_filesize = 1G/g" \
     -e "s/post_max_size = .*/post_max_size = 1G/g" \
     -e "s/memory_limit = .*/memory_limit = 512M/g" \
     /usr/local/etc/php/php.ini-production \
-    && cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini && \
-   echo -e '\
+    && cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
+
+RUN echo -e '\
     opcache.interned_strings_buffer=16\n\
     opcache.load_comments=Off\n\
     opcache.max_accelerated_files=16000\n\

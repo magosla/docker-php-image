@@ -2,6 +2,8 @@ version: 2.1
 
 jobs:
   build-base-image:
+    environment:
+      PHP_VERSION: "8.2"
     docker:
       - image: cimg/python:3.11.3
         auth:
@@ -11,17 +13,59 @@ jobs:
       - checkout
       - setup_remote_docker:
           version: 20.10.18
-          docker_layer_caching: false
+          docker_layer_caching: true
       - run:
-          name: "Build and push image"
+          name: "Set tag"
           command: |
-            PHP_VERSION = "8.2"
-            DOCKER_IMAGE_REPO="${DOCKERHUB_USERNAME}/np-php${PHP_VERSION}"
-            DOCKER_IMAGE_RELEASE_TAG="${DOCKER_IMAGE_REPO}:${CIRCLE_TAG}"
+            echo `date +%Y.%m` > tag.txt
+            _TAG=$(cat tag.txt)
+            echo "${PHP_VERSION}-${_TAG}" > img_ver.txt
+      - run:
+          name: "Build and push base image"
+          command: |
+            IMG_VER=$(cat img_ver.txt)
+            DOCKER_IMAGE_REPO="${DOCKERHUB_USERNAME}/php-swoole"
+            DOCKER_IMAGE_RELEASE_TAG="${DOCKER_IMAGE_REPO}:${IMG_VER}"
             DOCKER_IMAGE_LATEST_TAG="${DOCKER_IMAGE_REPO}:latest"
 
             docker build -t $DOCKER_IMAGE_REPO . -f ./docker/Dockerfile \
                    --build-arg=PHP_VERSION="${PHP_VERSION}"
+
+            docker tag $DOCKER_IMAGE_REPO $DOCKER_IMAGE_RELEASE_TAG
+            docker tag $DOCKER_IMAGE_REPO $DOCKER_IMAGE_LATEST_TAG
+            echo "$DOCKERHUB_PASSWORD" | docker login --username $DOCKERHUB_USERNAME --password-stdin
+            docker push $DOCKER_IMAGE_RELEASE_TAG
+            docker push $DOCKER_IMAGE_LATEST_TAG
+      - run:
+          name: "Build and ssh image"
+          command: |
+            IMG_VER=$(cat img_ver.txt)
+            BASE_VERSION=$(cat img_ver.txt)
+
+            DOCKER_IMAGE_REPO="${DOCKERHUB_USERNAME}/php-swoole"
+            DOCKER_IMAGE_RELEASE_TAG="${DOCKER_IMAGE_REPO}:${IMG_VER}-ssh"
+            DOCKER_IMAGE_LATEST_TAG="${DOCKER_IMAGE_REPO}:ssh-latest"
+
+            docker build -t $DOCKER_IMAGE_REPO . -f ./docker/ssh.Dockerfile \
+                   --build-arg=BASE_VERSION="${BASE_VERSION}"
+
+            docker tag $DOCKER_IMAGE_REPO $DOCKER_IMAGE_RELEASE_TAG
+            docker tag $DOCKER_IMAGE_REPO $DOCKER_IMAGE_LATEST_TAG
+            echo "$DOCKERHUB_PASSWORD" | docker login --username $DOCKERHUB_USERNAME --password-stdin
+            docker push $DOCKER_IMAGE_RELEASE_TAG
+            docker push $DOCKER_IMAGE_LATEST_TAG
+      - run:
+          name: "Build and xdebug image"
+          command: |
+            IMG_VER=$(cat img_ver.txt)
+            BASE_VERSION=$(cat img_ver.txt)
+
+            DOCKER_IMAGE_REPO="${DOCKERHUB_USERNAME}/php-swoole"
+            DOCKER_IMAGE_RELEASE_TAG="${DOCKER_IMAGE_REPO}:${IMG_VER}-xdebug"
+            DOCKER_IMAGE_LATEST_TAG="${DOCKER_IMAGE_REPO}:xdebug-latest"
+
+            docker build -t $DOCKER_IMAGE_REPO . -f ./docker/xdebug.Dockerfile \
+                   --build-arg=BASE_VERSION="${BASE_VERSION}"
 
             docker tag $DOCKER_IMAGE_REPO $DOCKER_IMAGE_RELEASE_TAG
             docker tag $DOCKER_IMAGE_REPO $DOCKER_IMAGE_LATEST_TAG
@@ -35,7 +79,7 @@ workflows:
       - build-base-image:
           filters:
             tags:
-              only: /.+/
+              only: /^[a-z0-9].*/
             branches:
               only:
                 - main
