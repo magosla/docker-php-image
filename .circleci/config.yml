@@ -3,9 +3,9 @@ version: 2.1
 jobs:
   build-base-image:
     environment:
-      PHP_VERSION: "8.2"
+      PHP_VERSION: "8.3"
     docker:
-      - image: cimg/python:3.11.3
+      - image: cimg/python:3.13.0
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
