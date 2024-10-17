@@ -1,4 +1,4 @@
-ARG PHP_VERSION=8.2
+ARG PHP_VERSION=8.3
 
 FROM php:${PHP_VERSION}-fpm-alpine
 
@@ -6,12 +6,13 @@ ARG LANG=en_US
 ARG CHARSET=UTF-8
 
 ENV TZ=UTC
-ENV SWOOLE_VERSION=5.1.1
+ENV SWOOLE_VERSION=5.1.4
 WORKDIR /var/www/html
 
 ENV EXT_VIPS_VERSION=1.5.2
 
 ENV COMPOSER_MEMORY_LIMIT=-1
+ENV COMPOSER_VERSION=2.8.1
 
 RUN set -ex                                                                                         && \
     ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime                                                  && \
@@ -19,7 +20,7 @@ RUN set -ex                                                                     
     # Install Composer/
     curl -sfL https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer && \
     chmod +x /usr/bin/composer                                                                      && \
-    composer self-update --clean-backups 2.5.2                                                      && \  
+    composer self-update --clean-backups ${COMPOSER_VERSION}                                                      && \  
     rm -f ${HOME}/.composer/*-old.phar                                                                && \
     apk update                                                                                      && \
     apk add --no-cache libstdc++ libpq libgomp \
