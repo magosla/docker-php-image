@@ -5,7 +5,7 @@ jobs:
     environment:
       PHP_VERSION: "8.3"
     docker:
-      - image: cimg/python:3.13.0
+      - image: cimg/python:3.12
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_PASSWORD
