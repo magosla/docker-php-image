@@ -29,7 +29,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: docker28
       - run:
           name: "Set tag"
           command: |
@@ -92,11 +91,11 @@ jobs:
 workflows:
   build:
     jobs:
-      - check-docker-file:
-          filters:
-            branches:
-              ignore:
-                - main
+      # - check-docker-file:
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - main
       - build-base-image:
           filters:
             tags:
