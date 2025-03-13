@@ -1,6 +1,20 @@
 version: 2.1
 
 jobs:
+  check-docker-file:
+    docker:
+      - image: cimg/python:3.13
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: "Test Dockerfile"
+          command: docker build --check . -f ./docker/Dockerfile \
+                   --build-arg=PHP_VERSION="${PHP_VERSION}"
   build-base-image:
     environment:
       PHP_VERSION: "8.4"
@@ -75,6 +89,11 @@ jobs:
 workflows:
   build:
     jobs:
+      - check-docker-file:
+          filters:
+            branches:
+              ignore:
+                - main
       - build-base-image:
           filters:
             tags:
