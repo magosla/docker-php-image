@@ -13,8 +13,7 @@ jobs:
           docker_layer_caching: true
       - run:
           name: "Test Dockerfile"
-          command: docker build --check . -f ./docker/Dockerfile \
-                   --build-arg=PHP_VERSION="${PHP_VERSION}"
+          command: docker build --check . -f ./docker/Dockerfile
   build-base-image:
     environment:
       PHP_VERSION: "8.4"
