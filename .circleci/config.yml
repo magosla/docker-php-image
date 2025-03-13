@@ -29,6 +29,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+          version: docker28
       - run:
           name: "Set tag"
           command: |
