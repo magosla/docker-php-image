@@ -6,13 +6,14 @@ ARG LANG=en_US
 ARG CHARSET=UTF-8
 
 ENV TZ=UTC
-ENV SWOOLE_VERSION=5.1.4
+ENV SWOOLE_VERSION=5.1.7
 WORKDIR /var/www/html
 
 ENV EXT_VIPS_VERSION=1.5.2
 
 ENV COMPOSER_MEMORY_LIMIT=-1
-ENV COMPOSER_VERSION=2.8.1
+ENV COMPOSER_VERSION=2.8.6
+ENV REDIS_VERSION=6.1.0
 
 RUN set -ex                                                                                         && \
     ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime                                                  && \
@@ -52,7 +53,8 @@ RUN set -ex                                                                     
     docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql                                     && \
     docker-php-ext-install pdo_pgsql pgsql                                                          && \
     pecl channel-update pecl.php.net                                                                && \
-    pecl install --configureoptions 'enable-redis-igbinary="no" enable-redis-lzf="no" enable-redis-zstd="no"' redis-5.3.7 && \
+    pecl install --configureoptions 'enable-redis-igbinary="no" enable-redis-lzf="no" enable-redis-zstd="no"' \
+    redis-${REDIS_VERSION} && \
     pecl install imagick                                                                          && \
     docker-php-ext-enable imagick                                                                 && \
     docker-php-ext-enable redis                                                                   && \
