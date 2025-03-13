@@ -1,19 +1,27 @@
-ARG PHP_VERSION=8.3
+# syntax=docker/dockerfile:1
+# check=error=true
+
+ARG PHP_VERSION=8.4
 
 FROM php:${PHP_VERSION}-fpm-alpine
 
 ARG LANG=en_US
 ARG CHARSET=UTF-8
 
-ENV TZ=UTC
-ENV SWOOLE_VERSION=5.1.7
+ARG COMPOSER_VERSION=2.8.6
+ARG REDIS_VERSION=6.1.0
+ARG SWOOLE_VERSION=6.0.1
+ARG IMAGICK_VERSION=3.7.0
+
+ARG TZ=UTC
 WORKDIR /var/www/html
 
 ENV EXT_VIPS_VERSION=1.5.2
 
 ENV COMPOSER_MEMORY_LIMIT=-1
-ENV COMPOSER_VERSION=2.8.6
-ENV REDIS_VERSION=6.1.0
+
+# support link: https://github.com/mlocati/docker-php-extension-installer
+ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
 RUN set -ex                                                                                         && \
     ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime                                                  && \
@@ -54,8 +62,8 @@ RUN set -ex                                                                     
     docker-php-ext-install pdo_pgsql pgsql                                                          && \
     pecl channel-update pecl.php.net                                                                && \
     pecl install --configureoptions 'enable-redis-igbinary="no" enable-redis-lzf="no" enable-redis-zstd="no"' \
-    redis-${REDIS_VERSION} && \
-    pecl install imagick                                                                          && \
+    redis-${REDIS_VERSION}   && \
+    install-php-extensions imagick                                                                && \
     docker-php-ext-enable imagick                                                                 && \
     docker-php-ext-enable redis                                                                   && \
     docker-php-ext-configure gd --enable-gd --with-jpeg                                           && \
