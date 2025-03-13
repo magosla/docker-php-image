@@ -15,7 +15,8 @@ jobs:
           name: "Test Dockerfile"
           command: |
             docker --version
-            docker build -f ./docker/Dockerfile --check . 
+            docker buildx build --help
+            docker build -f ./docker/Dockerfile --call=check . 
   build-base-image:
     environment:
       PHP_VERSION: "8.4"
