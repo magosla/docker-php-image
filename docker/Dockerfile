@@ -41,6 +41,7 @@ RUN set -ex                                                                     
     libzip \
     libxml2 \
     shadow \
+    supervisor \
     #postgresql-client \
     vips                                                                                        && \
     apk add --no-cache --virtual .build-deps ${PHPIZE_DEPS} curl-dev \
