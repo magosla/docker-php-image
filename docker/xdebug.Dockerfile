@@ -1,4 +1,4 @@
-ARG BASE_VERSION
+ARG BASE_VERSION=8.4
 FROM magosla/php-swoole:${BASE_VERSION}
 
 RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS curl-dev \
