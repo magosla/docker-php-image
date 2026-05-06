@@ -8,9 +8,9 @@ FROM php:${PHP_VERSION}-fpm-alpine
 ARG LANG=en_US
 ARG CHARSET=UTF-8
 
-ARG COMPOSER_VERSION=2.8.6
-ARG REDIS_VERSION=6.1.0
-ARG SWOOLE_VERSION=6.0.1
+ARG COMPOSER_VERSION=2.9.7
+ARG REDIS_VERSION=6.3.0
+ARG SWOOLE_VERSION=6.2.0
 ARG IMAGICK_VERSION=3.7.0
 
 ARG TZ=UTC
@@ -56,6 +56,7 @@ RUN set -ex                                                                     
     libwebp-dev \
     # postgresql-dev \
     libpq-dev \
+    nghttp2-dev \
     vips-dev                                                                                        && \
     # apk add -u --no-cache shadow                                                                    && \
     docker-php-ext-install pdo_mysql                                                                && \
@@ -85,8 +86,9 @@ RUN set -ex                                                                     
     docker-php-ext-configure swoole \
     --enable-mysqlnd      \
     --enable-swoole-pgsql \
-    --enable-openssl      \
-    --enable-sockets --enable-swoole-curl                                                         && \
+    # --enable-openssl      \
+    --enable-sockets  \
+    --enable-swoole-curl                                                         && \
     docker-php-ext-install -j$(nproc) swoole                                                      && \
     rm -f swoole.tar.gz                                                                           && \
     apk del .build-deps                                                                           && \
