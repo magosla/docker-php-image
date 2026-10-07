@@ -1,17 +1,17 @@
 # syntax=docker/dockerfile:1
 # check=error=true
 
-ARG PHP_VERSION=8.4
+ARG PHP_VERSION=8.5
 
 FROM php:${PHP_VERSION}-fpm-alpine
 
 ARG LANG=en_US
 ARG CHARSET=UTF-8
 
-ARG COMPOSER_VERSION=2.9.7
+ARG COMPOSER_VERSION=2.10.3
 ARG REDIS_VERSION=6.3.0
-ARG SWOOLE_VERSION=6.2.0
-ARG IMAGICK_VERSION=3.7.0
+ARG SWOOLE_VERSION=6.2.3
+ARG IMAGICK_VERSION=3.8.1
 
 ARG TZ=UTC
 WORKDIR /var/www/html
@@ -25,15 +25,15 @@ ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/relea
 
 RUN set -ex                                                                                         && \
     ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime                                                  && \
-    echo ${TZ} > /etc/timezone                                                                        && \       
+    echo ${TZ} > /etc/timezone                                                                        && \
     # Install Composer/
     curl -sfL https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer && \
     chmod +x /usr/bin/composer                                                                      && \
-    composer self-update --clean-backups ${COMPOSER_VERSION}                                                      && \  
+    composer self-update --clean-backups ${COMPOSER_VERSION}                                                      && \
     rm -f ${HOME}/.composer/*-old.phar                                                                && \
     apk update                                                                                      && \
     apk add --no-cache libstdc++ libpq libgomp \
-    icu \ 
+    icu \
     imagemagick \
     libpng \
     libwebp \
@@ -74,10 +74,10 @@ RUN set -ex                                                                     
     docker-php-ext-install bcmath                                                                 && \
     docker-php-ext-install xml                                                                    && \
     docker-php-ext-install zip                                                                    && \
-    docker-php-ext-install sockets intl                                                           && \  
+    docker-php-ext-install sockets intl                                                           && \
     docker-php-ext-enable intl                                                                    && \
     docker-php-ext-configure pcntl --enable-pcntl                                                 && \
-    docker-php-ext-install pcntl                                                                  && \ 
+    docker-php-ext-install pcntl                                                                  && \
     docker-php-source extract                                                                     && \
     docker-php-source delete                                                                      && \
     mkdir -p /usr/src/php/ext/swoole                                                              && \
