@@ -19,7 +19,7 @@ jobs:
             docker build -f ./docker/Dockerfile --call=check . 
   build-base-image:
     environment:
-      PHP_VERSION: "8.4"
+      PHP_VERSION: "8.5"
     docker:
       - image: cimg/python:3.13
         auth:
@@ -91,11 +91,11 @@ jobs:
 workflows:
   build:
     jobs:
-      # - check-docker-file:
-      #     filters:
-      #       branches:
-      #         ignore:
-      #           - main
+      - check-docker-file:
+          filters:
+            branches:
+              ignore:
+                - main
       - build-base-image:
           filters:
             tags:
