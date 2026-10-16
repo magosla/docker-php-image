@@ -64,7 +64,6 @@ RUN apk add --no-cache --virtual .build-deps \
         bcmath \
         gd \
         intl \
-        opcache \
         pcntl \
         sockets \
         xml \
