@@ -49,6 +49,7 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
         echo "opcache.enable_cli=1"; \
         echo "opcache.validate_timestamps=0"; \
         echo "expose_php=Off"; \
+        echo "memory_limit=512M"; \
     } > "$PHP_INI_DIR/conf.d/production.ini"
 
 # Install remaining Laravel dependencies
