@@ -16,65 +16,30 @@ ENV TZ=${TZ} \
 # Runtime libraries
 RUN apk add --no-cache \
     tzdata \
-    imagemagick \
-    imagemagick-libs \
-    icu-libs \
-    libzip \
-    libpng \
-    libjpeg-turbo \
-    libwebp \
-    freetype \
-    libxml2 \
-    openssl \
-    curl \
-    zlib \
-    libstdc++ \
-    libgcc \
-    protobuf \
-    grpc-cpp \
     && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
     && echo ${TZ} > /etc/timezone
 
-# Build dependencies and PHP extensions
-RUN apk add --no-cache --virtual .build-deps \
-        $PHPIZE_DEPS \
-        linux-headers \
-        icu-dev \
-        libzip-dev \
-        libpng-dev \
-        libjpeg-turbo-dev \
-        libwebp-dev \
-        freetype-dev \
-        libxml2-dev \
-        openssl-dev \
-        curl-dev \
-        zlib-dev \
-        imagemagick-dev \
-        protobuf-dev \
-        grpc-dev \
-        autoconf \
-        cmake \
-        make \
-        g++ \
-    && docker-php-ext-configure gd \
-        --with-freetype \
-        --with-jpeg \
-        --with-webp \
-    && docker-php-ext-install -j"$(nproc)" \
-        bcmath \
-        gd \
-        intl \
-        pcntl \
-        sockets \
-        xml \
-        zip \
-    && pecl install imagick \
-    && docker-php-ext-enable imagick \
-    && pecl install protobuf \
-    && docker-php-ext-enable protobuf \
-    && pecl install grpc \
-    && docker-php-ext-enable grpc \
-    && apk del .build-deps
+# Install build dependencies, the extensions, and clean up in a single layer
+RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers postgresql-dev \
+    && curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions \
+    && chmod +x /usr/local/bin/install-php-extensions \
+    && install-php-extensions \
+    grpc \
+    protobuf \
+    imagick \
+    gd \
+    bcmath \
+    zip \
+    pcntl \
+    geospatial \
+    intl \
+    &&  docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql            \
+    && docker-php-ext-install pdo_pgsql pgsql \
+    && apk del .build-deps \
+    && rm /usr/local/bin/install-php-extensions                        \
+    && { find /usr/local/lib -type f -print0 | xargs -0r strip --strip-all -p 2>/dev/null || true; } \
+    && rm -rf /tmp/* /usr/local/lib/php/doc/* /var/cache/* /var/www/html/* /usr/share/php8 /usr/share/php
+
 
 # Production PHP settings
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
@@ -103,6 +68,8 @@ RUN php -m \
     && php --ri grpc \
     && php --ri protobuf \
     && php --ri imagick \
+    && php --ri pdo_pgsql \
+    && php --ri pgsql \
     && php -r 'echo "Timezone: ", date_default_timezone_get(), PHP_EOL;'
 
 # EXPOSE 8000

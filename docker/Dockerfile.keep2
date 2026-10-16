@@ -1,0 +1,114 @@
+ARG PHP_VERSION=8.5
+
+ARG SWOOLE_VERSION=6.3
+
+FROM phpswoole/swoole:${SWOOLE_VERSION}-php${PHP_VERSION}-alpine
+
+ARG TZ=UTC
+ARG LANG=en_US
+ARG CHARSET=UTF-8
+
+WORKDIR /var/www
+
+ENV TZ=${TZ} \
+    COMPOSER_ALLOW_SUPERUSER=1
+
+# Runtime libraries
+RUN apk add --no-cache \
+    tzdata \
+    imagemagick \
+    imagemagick-libs \
+    icu-libs \
+    libzip \
+    libpng \
+    libjpeg-turbo \
+    libwebp \
+    freetype \
+    libxml2 \
+    openssl \
+    curl \
+    zlib \
+    libstdc++ \
+    libgcc \
+    protobuf \
+    grpc-cpp \
+    && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
+    && echo ${TZ} > /etc/timezone
+
+# Build dependencies and PHP extensions
+RUN apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
+        linux-headers \
+        icu-dev \
+        libzip-dev \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        libwebp-dev \
+        freetype-dev \
+        libxml2-dev \
+        openssl-dev \
+        curl-dev \
+        zlib-dev \
+        imagemagick-dev \
+        protobuf-dev \
+        grpc-dev \
+        autoconf \
+        cmake \
+        make \
+        g++ \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
+        --with-webp \
+    && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
+        gd \
+        intl \
+        pcntl \
+        sockets \
+        xml \
+        zip \
+    && pecl channel-update pecl.php.net \
+    && pecl install imagick \
+    && docker-php-ext-enable imagick \
+    && pecl install protobuf \
+    && docker-php-ext-enable protobuf \
+    && pecl install grpc \
+    && docker-php-ext-enable grpc \
+    && apk del .build-deps
+
+# Production PHP settings
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && { \
+        echo "date.timezone=${TZ}"; \
+        echo "opcache.enable=1"; \
+        echo "opcache.enable_cli=1"; \
+        echo "opcache.validate_timestamps=0"; \
+        echo "expose_php=Off"; \
+    } > "$PHP_INI_DIR/conf.d/production.ini"
+
+# Install remaining Laravel dependencies
+# COPY . .
+
+# RUN composer install \
+#     --no-dev \
+#     --prefer-dist \
+#     --optimize-autoloader \
+#     --no-interaction \
+#     --no-progress
+
+# Confirm required extensions and HTTP/2 build support
+RUN php -m \
+    && php --ri swoole \
+    && php --ri redis \
+    && php --ri grpc \
+    && php --ri protobuf \
+    && php --ri imagick \
+    && php -r 'echo "Timezone: ", date_default_timezone_get(), PHP_EOL;'
+
+# EXPOSE 8000
+
+# CMD ["php", "artisan", "octane:start", \
+#      "--server=swoole", \
+#      "--host=0.0.0.0", \
+#      "--port=8000"]
