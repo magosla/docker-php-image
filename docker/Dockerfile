@@ -8,7 +8,7 @@ ARG TZ=UTC
 ARG LANG=en_US
 ARG CHARSET=UTF-8
 
-WORKDIR /var/www
+WORKDIR /var/www/html
 
 ENV TZ=${TZ} \
     COMPOSER_ALLOW_SUPERUSER=1
@@ -17,10 +17,10 @@ ENV TZ=${TZ} \
 RUN apk add --no-cache \
     tzdata \
     && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
-    && echo ${TZ} > /etc/timezone
+    && echo ${TZ} > /etc/timezone \
 
 # Install build dependencies, the extensions, and clean up in a single layer
-RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers postgresql-dev \
+&& apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers \
     && curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions \
     && chmod +x /usr/local/bin/install-php-extensions \
     && install-php-extensions \
@@ -33,8 +33,8 @@ RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS linux-headers postgres
     pcntl \
     geospatial \
     intl \
-    &&  docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql            \
-    && docker-php-ext-install pdo_pgsql pgsql \
+    pdo_pgsql \
+    pgsql \
     && apk del .build-deps \
     && rm /usr/local/bin/install-php-extensions                        \
     && { find /usr/local/lib -type f -print0 | xargs -0r strip --strip-all -p 2>/dev/null || true; } \
