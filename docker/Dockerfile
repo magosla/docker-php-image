@@ -1,109 +1,114 @@
-# syntax=docker/dockerfile:1
-# check=error=true
-
 ARG PHP_VERSION=8.5
 
-FROM php:${PHP_VERSION}-fpm-alpine
+ARG SWOOLE_VERSION=6.2.3
 
+FROM phpswoole/swoole:${SWOOLE_VERSION}-php${PHP_VERSION}-alpine
+
+ARG TZ=UTC
 ARG LANG=en_US
 ARG CHARSET=UTF-8
 
-ARG COMPOSER_VERSION=2.10.3
-ARG REDIS_VERSION=6.3.0
-ARG SWOOLE_VERSION=6.2.3
-ARG IMAGICK_VERSION=3.8.1
+WORKDIR /var/www
 
-ARG TZ=UTC
-WORKDIR /var/www/html
+ENV TZ=${TZ} \
+    COMPOSER_ALLOW_SUPERUSER=1
 
-ENV EXT_VIPS_VERSION=1.5.2
-
-ENV COMPOSER_MEMORY_LIMIT=-1
-
-# support link: https://github.com/mlocati/docker-php-extension-installer
-ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
-
-RUN set -ex                                                                                         && \
-    ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime                                                  && \
-    echo ${TZ} > /etc/timezone                                                                        && \
-    # Install Composer/
-    curl -sfL https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer && \
-    chmod +x /usr/bin/composer                                                                      && \
-    composer self-update --clean-backups ${COMPOSER_VERSION}                                                      && \
-    rm -f ${HOME}/.composer/*-old.phar                                                                && \
-    apk update                                                                                      && \
-    apk add --no-cache libstdc++ libpq libgomp \
-    icu \
+# Runtime libraries
+RUN apk add --no-cache \
+    tzdata \
     imagemagick \
-    libpng \
-    libwebp \
-    libjpeg \
+    imagemagick-libs \
+    icu-libs \
     libzip \
+    libpng \
+    libjpeg-turbo \
+    libwebp \
+    freetype \
     libxml2 \
-    shadow \
-    supervisor \
-    #postgresql-client \
-    vips                                                                                        && \
-    apk add --no-cache --virtual .build-deps ${PHPIZE_DEPS} curl-dev \
-    linux-headers postgresql-dev openssl-dev pcre-dev pcre2-dev zlib-dev \
-    icu-dev \
-    libzip-dev \
-    libxml2-dev \
-    oniguruma-dev \
-    imagemagick-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    libwebp-dev \
-    # postgresql-dev \
-    libpq-dev \
-    nghttp2-dev \
-    vips-dev                                                                                        && \
-    # apk add -u --no-cache shadow                                                                    && \
-    docker-php-ext-install pdo_mysql                                                                && \
-    docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql                                     && \
-    docker-php-ext-install pdo_pgsql pgsql                                                          && \
-    pecl channel-update pecl.php.net                                                                && \
-    pecl install --configureoptions 'enable-redis-igbinary="no" enable-redis-lzf="no" enable-redis-zstd="no"' \
-    redis-${REDIS_VERSION}   && \
-    install-php-extensions imagick                                                                && \
-    docker-php-ext-enable imagick                                                                 && \
-    docker-php-ext-enable redis                                                                   && \
-    docker-php-ext-configure gd --enable-gd --with-jpeg                                           && \
-    docker-php-ext-install gd                                                                     && \
-    docker-php-ext-enable gd                                                                      && \
-    docker-php-ext-install bcmath                                                                 && \
-    docker-php-ext-install xml                                                                    && \
-    docker-php-ext-install zip                                                                    && \
-    docker-php-ext-install sockets intl                                                           && \
-    docker-php-ext-enable intl                                                                    && \
-    docker-php-ext-configure pcntl --enable-pcntl                                                 && \
-    docker-php-ext-install pcntl                                                                  && \
-    docker-php-source extract                                                                     && \
-    docker-php-source delete                                                                      && \
-    mkdir -p /usr/src/php/ext/swoole                                                              && \
-    curl -sfL https://github.com/swoole/swoole-src/archive/v${SWOOLE_VERSION}.tar.gz -o swoole.tar.gz         && \
-    tar xfz swoole.tar.gz --strip-components=1 -C /usr/src/php/ext/swoole                         && \
-    docker-php-ext-configure swoole \
-    --enable-mysqlnd      \
-    --enable-swoole-pgsql \
-    # --enable-openssl      \
-    --enable-sockets  \
-    --enable-swoole-curl                                                         && \
-    docker-php-ext-install -j$(nproc) swoole                                                      && \
-    rm -f swoole.tar.gz                                                                           && \
-    apk del .build-deps                                                                           && \
-    { find /usr/local/lib -type f -print0 | xargs -0r strip --strip-all -p 2>/dev/null || true; } && \
-    rm -rf /tmp/* /usr/local/lib/php/doc/* /var/cache/* /var/www/html/* /usr/share/php8 /usr/share/php
+    openssl \
+    curl \
+    zlib \
+    libstdc++ \
+    libgcc \
+    protobuf \
+    grpc-cpp \
+    && ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime \
+    && echo ${TZ} > /etc/timezone
 
-RUN sed -i -e "s/upload_max_filesize = .*/upload_max_filesize = 1G/g" \
-    -e "s/post_max_size = .*/post_max_size = 1G/g" \
-    -e "s/memory_limit = .*/memory_limit = 512M/g" \
-    /usr/local/etc/php/php.ini-production \
-    && cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini    && \
-    echo -e '\
-    # OPCACHE CONFIG SETTINGS
-    opcache.interned_strings_buffer=16\n\
-    opcache.load_comments=Off\n\
-    opcache.max_accelerated_files=16000\n\
-    opcache.save_comments=Off\n\
-    ' >> /usr/local/etc/php/conf.d/docker-php-ext-opcache.ini
+# Build dependencies and PHP extensions
+RUN apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
+        linux-headers \
+        icu-dev \
+        libzip-dev \
+        libpng-dev \
+        libjpeg-turbo-dev \
+        libwebp-dev \
+        freetype-dev \
+        libxml2-dev \
+        openssl-dev \
+        curl-dev \
+        zlib-dev \
+        imagemagick-dev \
+        protobuf-dev \
+        grpc-cpp-dev \
+        autoconf \
+        cmake \
+        make \
+        g++ \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
+        --with-webp \
+    && docker-php-ext-install -j"$(nproc)" \
+        bcmath \
+        gd \
+        intl \
+        opcache \
+        pcntl \
+        sockets \
+        xml \
+        zip \
+    && pecl install imagick \
+    && docker-php-ext-enable imagick \
+    && pecl install protobuf \
+    && docker-php-ext-enable protobuf \
+    && pecl install grpc \
+    && docker-php-ext-enable grpc \
+    && apk del .build-deps
+
+# Production PHP settings
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && { \
+        echo "date.timezone=${TZ}"; \
+        echo "opcache.enable=1"; \
+        echo "opcache.enable_cli=1"; \
+        echo "opcache.validate_timestamps=0"; \
+        echo "expose_php=Off"; \
+    } > "$PHP_INI_DIR/conf.d/production.ini"
+
+# Install remaining Laravel dependencies
+# COPY . .
+
+# RUN composer install \
+#     --no-dev \
+#     --prefer-dist \
+#     --optimize-autoloader \
+#     --no-interaction \
+#     --no-progress
+
+# Confirm required extensions and HTTP/2 build support
+RUN php -m \
+    && php --ri swoole \
+    && php --ri redis \
+    && php --ri grpc \
+    && php --ri protobuf \
+    && php --ri imagick \
+    && php -r 'echo "Timezone: ", date_default_timezone_get(), PHP_EOL;'
+
+# EXPOSE 8000
+
+# CMD ["php", "artisan", "octane:start", \
+#      "--server=swoole", \
+#      "--host=0.0.0.0", \
+#      "--port=8000"]
