@@ -1,6 +1,6 @@
 ARG PHP_VERSION=8.5
 
-ARG SWOOLE_VERSION=6.2.3
+ARG SWOOLE_VERSION=6.3
 
 FROM phpswoole/swoole:${SWOOLE_VERSION}-php${PHP_VERSION}-alpine
 
@@ -51,7 +51,7 @@ RUN apk add --no-cache --virtual .build-deps \
         zlib-dev \
         imagemagick-dev \
         protobuf-dev \
-        grpc-cpp-dev \
+        grpc-dev \
         autoconf \
         cmake \
         make \
